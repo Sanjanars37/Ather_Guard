@@ -1,4 +1,5 @@
 import type { Alert, Severity } from "./types";
+import type { WatchPoint } from "./watchlist";
 import { FLOOD_WATCHLIST } from "./watchlist";
 
 const BASE_URL = "https://flood-api.open-meteo.com/v1/flood";
@@ -23,9 +24,12 @@ function severityForAnomaly(ratio: number): Severity {
   return "low";
 }
 
-export async function fetchFloodAlerts(): Promise<Alert[]> {
-  const lats = FLOOD_WATCHLIST.map((p) => p.lat).join(",");
-  const lons = FLOOD_WATCHLIST.map((p) => p.lon).join(",");
+/** Fetches flood risk for arbitrary points — returns every point, all severities included. */
+export async function fetchFloodRiskForPoints(points: WatchPoint[]): Promise<Alert[]> {
+  if (points.length === 0) return [];
+
+  const lats = points.map((p) => p.lat).join(",");
+  const lons = points.map((p) => p.lon).join(",");
   const url = `${BASE_URL}?latitude=${lats}&longitude=${lons}&daily=river_discharge,river_discharge_mean&past_days=7&forecast_days=1`;
 
   const res = await fetch(url);
@@ -38,7 +42,7 @@ export async function fetchFloodAlerts(): Promise<Alert[]> {
   const alerts: Alert[] = [];
 
   results.forEach((result, i) => {
-    const point = FLOOD_WATCHLIST[i];
+    const point = points[i];
     if (!point || !result.daily?.river_discharge?.length) return;
 
     const lastIdx = result.daily.river_discharge.length - 1;
@@ -48,7 +52,6 @@ export async function fetchFloodAlerts(): Promise<Alert[]> {
 
     const ratio = discharge / mean;
     const severity = severityForAnomaly(ratio);
-    if (severity === "low") return;
 
     alerts.push({
       id: `flood-${point.name}`,
@@ -76,4 +79,10 @@ export async function fetchFloodAlerts(): Promise<Alert[]> {
   });
 
   return alerts;
+}
+
+/** Watchlist-driven feed for the alert dashboard — active (non-low) alerts only. */
+export async function fetchFloodAlerts(): Promise<Alert[]> {
+  const risks = await fetchFloodRiskForPoints(FLOOD_WATCHLIST);
+  return risks.filter((a) => a.severity !== "low");
 }

@@ -1,4 +1,5 @@
 import type { Alert, Severity } from "./types";
+import type { WatchPoint } from "./watchlist";
 import { WILDFIRE_WATCHLIST } from "./watchlist";
 
 const BASE_URL = "https://api.open-meteo.com/v1/forecast";
@@ -40,9 +41,12 @@ function severityForRiskIndex(index: number): Severity {
   return "low";
 }
 
-export async function fetchWildfireAlerts(): Promise<Alert[]> {
-  const lats = WILDFIRE_WATCHLIST.map((p) => p.lat).join(",");
-  const lons = WILDFIRE_WATCHLIST.map((p) => p.lon).join(",");
+/** Fetches fire-weather risk for arbitrary points — returns every point, all severities included. */
+export async function fetchWildfireRiskForPoints(points: WatchPoint[]): Promise<Alert[]> {
+  if (points.length === 0) return [];
+
+  const lats = points.map((p) => p.lat).join(",");
+  const lons = points.map((p) => p.lon).join(",");
   const url = `${BASE_URL}?latitude=${lats}&longitude=${lons}&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m&past_days=1&forecast_days=1`;
 
   const res = await fetch(url);
@@ -55,7 +59,7 @@ export async function fetchWildfireAlerts(): Promise<Alert[]> {
   const alerts: Alert[] = [];
 
   results.forEach((result, i) => {
-    const point = WILDFIRE_WATCHLIST[i];
+    const point = points[i];
     if (!point || !result.hourly?.temperature_2m?.length) return;
 
     const { time, temperature_2m, relative_humidity_2m, wind_speed_10m } = result.hourly;
@@ -66,7 +70,6 @@ export async function fetchWildfireAlerts(): Promise<Alert[]> {
     const lastIdx = riskSeries.length - 1;
     const currentRisk = riskSeries[lastIdx];
     const severity = severityForRiskIndex(currentRisk);
-    if (severity === "low") return;
 
     alerts.push({
       id: `wildfire-${point.name}`,
@@ -92,4 +95,10 @@ export async function fetchWildfireAlerts(): Promise<Alert[]> {
   });
 
   return alerts;
+}
+
+/** Watchlist-driven feed for the alert dashboard — active (non-low) alerts only. */
+export async function fetchWildfireAlerts(): Promise<Alert[]> {
+  const risks = await fetchWildfireRiskForPoints(WILDFIRE_WATCHLIST);
+  return risks.filter((a) => a.severity !== "low");
 }

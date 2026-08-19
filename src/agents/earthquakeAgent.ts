@@ -20,7 +20,7 @@ interface UsgsResponse {
   features: UsgsFeature[];
 }
 
-function severityForMagnitude(mag: number): Severity {
+export function severityForMagnitude(mag: number): Severity {
   if (mag >= 6.0) return "critical";
   if (mag >= 5.0) return "high";
   if (mag >= 4.0) return "medium";
@@ -63,4 +63,52 @@ export async function fetchEarthquakeAlerts(): Promise<Alert[]> {
       return alert;
     })
     .filter((a) => a.severity !== "low");
+}
+
+export interface RegionalSeismicActivity {
+  radiusKm: number;
+  count: number;
+  maxMagnitude: number | null;
+  severity: Severity;
+  recentQuakes: { mag: number; place: string; time: string }[];
+}
+
+/**
+ * There's no "seismic hazard score" API for an arbitrary point — this
+ * reports actual recorded activity in the area over the last 30 days as
+ * an honest proxy for regional risk, not a fabricated forecast.
+ */
+export async function fetchRegionalSeismicActivity(
+  lat: number,
+  lon: number,
+  radiusKm = 300
+): Promise<RegionalSeismicActivity> {
+  const startTime = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const url =
+    `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=${lat}&longitude=${lon}` +
+    `&maxradiuskm=${radiusKm}&minmagnitude=2.5&starttime=${startTime}&orderby=magnitude`;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`USGS query API responded with ${res.status}`);
+  }
+  const data: UsgsResponse = await res.json();
+
+  const quakes = data.features
+    .filter((f) => typeof f.properties.mag === "number")
+    .map((f) => ({
+      mag: f.properties.mag as number,
+      place: f.properties.place ?? "Unknown location",
+      time: new Date(f.properties.time).toISOString(),
+    }));
+
+  const maxMagnitude = quakes.length > 0 ? quakes[0].mag : null;
+
+  return {
+    radiusKm,
+    count: quakes.length,
+    maxMagnitude,
+    severity: maxMagnitude != null ? severityForMagnitude(maxMagnitude) : "low",
+    recentQuakes: quakes.slice(0, 5),
+  };
 }

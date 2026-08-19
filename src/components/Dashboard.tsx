@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
-import { ShieldAlert, Map as MapIcon, HeartPulse } from "lucide-react";
+import { ShieldAlert, Map as MapIcon, HeartPulse, Search } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAgentFeed } from "../hooks/useAgentFeed";
 import { TacticalMap } from "./TacticalMap";
 import { AlertFeed } from "./AlertFeed";
 import { AlertDetail } from "./AlertDetail";
 import { SurvivalOrchestrator } from "./SurvivalOrchestrator";
+import { RegionalScanner } from "./RegionalScanner";
 
-type Tab = "alerts" | "survival";
+type Tab = "alerts" | "scanner" | "survival";
 
 export function Dashboard() {
   const { alerts, loading, error, refresh } = useAgentFeed();
@@ -50,6 +51,12 @@ export function Dashboard() {
           <div className="flex border-b border-white/10 shrink-0">
             <TabButton icon={MapIcon} label="Alerts" active={tab === "alerts"} onClick={() => setTab("alerts")} />
             <TabButton
+              icon={Search}
+              label="Scanner"
+              active={tab === "scanner"}
+              onClick={() => setTab("scanner")}
+            />
+            <TabButton
               icon={HeartPulse}
               label="Survival Plan"
               active={tab === "survival"}
@@ -57,7 +64,7 @@ export function Dashboard() {
             />
           </div>
 
-          {tab === "alerts" ? (
+          {tab === "alerts" && (
             <div className="flex-1 flex flex-col min-h-0">
               <div className="flex-1 min-h-0 overflow-y-auto">
                 <AlertFeed
@@ -75,7 +82,15 @@ export function Dashboard() {
                 </div>
               )}
             </div>
-          ) : (
+          )}
+
+          {tab === "scanner" && (
+            <div className="flex-1 overflow-y-auto">
+              <RegionalScanner />
+            </div>
+          )}
+
+          {tab === "survival" && (
             <div className="flex-1 overflow-y-auto">
               <SurvivalOrchestrator prefill={selectedAlert} />
             </div>

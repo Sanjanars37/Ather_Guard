@@ -19,6 +19,12 @@ import { cn } from './lib/utils';
 
 type ImageSize = "1K" | "2K" | "4K";
 
+const IMAGE_DIMENSIONS: Record<ImageSize, { width: number; height: number }> = {
+  "1K": { width: 1024, height: 576 },
+  "2K": { width: 2048, height: 1152 },
+  "4K": { width: 3840, height: 2160 },
+};
+
 export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -30,18 +36,19 @@ export default function App() {
     setIsGenerating(true);
     setError(null);
     try {
-      const res = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, imageSize }),
-      });
-      const data = await res.json();
+      const { width, height } = IMAGE_DIMENSIONS[imageSize];
+      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&seed=${Date.now()}&nologo=true`;
 
+      const res = await fetch(url);
       if (!res.ok) {
-        throw new Error(data.error || "Failed to generate image.");
+        throw new Error(`Image service responded with ${res.status}.`);
       }
 
-      setGeneratedImage(`data:image/png;base64,${data.image}`);
+      const blob = await res.blob();
+      setGeneratedImage((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(blob);
+      });
     } catch (err: any) {
       console.error("Generation error:", err);
       setError(err.message || "Failed to generate image. Please try again.");
@@ -218,7 +225,7 @@ export default function App() {
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <a 
                       href={generatedImage} 
-                      download="atherguard-cover.png"
+                      download="atherguard-cover.jpg"
                       className="p-3 bg-white text-black rounded-full hover:scale-110 transition-transform"
                     >
                       <Download className="w-5 h-5" />

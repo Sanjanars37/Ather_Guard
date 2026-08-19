@@ -1,20 +1,20 @@
 # AtherGuard — Smart Disaster Detection
 
-Agentic AI landing page and visual generator for disaster monitoring and early warning, with a Vercel serverless function proxying Gemini image generation so the API key never reaches the browser.
+Agentic AI landing page and visual generator for disaster monitoring and early warning. Image generation calls [Pollinations.ai](https://pollinations.ai) directly from the browser — a free, keyless image API, so there's no backend, no API key, and no billing to configure.
 
 ## Run locally
 
-**Prerequisites:** Node.js, [Vercel CLI](https://vercel.com/docs/cli) (`npm i -g vercel`)
+**Prerequisites:** Node.js
 
 1. Install dependencies:
    `npm install`
-2. Copy `.env.example` to `.env` and set `GEMINI_API_KEY` to your Gemini API key.
-3. Run the app (serves both the Vite frontend and the `/api` function):
-   `vercel dev`
+2. Run the app:
+   `npm run dev`
 
 ## Deploy
 
-1. `vercel login`
-2. `vercel` (first run links/creates the project)
-3. In the Vercel project settings, add an environment variable `GEMINI_API_KEY` with your Gemini API key (do **not** prefix it with `VITE_` — it must stay server-side only).
-4. `vercel --prod`
+Fully static — no environment variables or serverless functions required. Deploy to any static host:
+
+- **Vercel**: import the repo at [vercel.com/new](https://vercel.com/new), it auto-detects Vite. Deploy.
+- **Netlify**: import the repo, build command `npm run build`, publish directory `dist`.
+- **GitHub Pages**: run `npm run build`, publish the `dist/` folder.

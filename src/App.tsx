@@ -97,7 +97,7 @@ export default function App() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                 </span>
-                AtherGuard &middot; Agentic AI System v1.0
+                AetherGuard &middot; Agentic AI System v1.0
               </div>
             </div>
 
@@ -225,7 +225,7 @@ export default function App() {
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <a 
                       href={generatedImage} 
-                      download="atherguard-cover.jpg"
+                      download="aetherguard-cover.jpg"
                       className="p-3 bg-white text-black rounded-full hover:scale-110 transition-transform"
                     >
                       <Download className="w-5 h-5" />

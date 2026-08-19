@@ -1,4 +1,4 @@
-# AtherGuard — Smart Disaster Detection
+# AetherGuard — Multi-Agent Disaster Intelligence & Early Warning System
 
 Agentic AI landing page and visual generator for disaster monitoring and early warning. Image generation calls [Pollinations.ai](https://pollinations.ai) directly from the browser — a free, keyless image API, so there's no backend, no API key, and no billing to configure.
 
